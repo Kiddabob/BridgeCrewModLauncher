@@ -1,3 +1,7 @@
+Version 0.2.3 adds a shiny gold Starfleet delta with a chrome spanner as the
+app, window, shortcut and installer icon. The transparent artwork includes
+dedicated Windows icon sizes from 16 through 256 pixels.
+
 Native WinUI 3 launcher with Windows 11 styling, Mica, system/light/dark themes,
 sample lobby browsing, mod subscription review, separate Meta PC/Steam payloads,
 verified caching, a subscription library, and GitHub-backed app updates.

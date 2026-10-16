@@ -11,7 +11,7 @@ $publish=Join-Path $PSScriptRoot "publish/$Version"
 if([string]::IsNullOrWhiteSpace($OutputDirectory)){$OutputDirectory=Join-Path $PSScriptRoot "releases/$Version"}
 dotnet publish (Join-Path $PSScriptRoot 'WinUI/BridgeCrew.Launcher.csproj') -c Release -r win-x64 --self-contained true -p:Version=$Version -p:WindowsAppSDKSelfContained=true --configfile (Join-Path $PSScriptRoot 'NuGet.Config') -o $publish --nologo
 if($LASTEXITCODE -ne 0){throw 'Publish failed.'}
-foreach($required in @('BridgeCrew.Launcher.exe','App.xbf','MainWindow.xbf','BridgeCrew.Launcher.pri','Assets/AppIcon.ico')){
+foreach($required in @('BridgeCrew.Launcher.exe','App.xbf','MainWindow.xbf','BridgeCrew.Launcher.pri','Assets/AppIcon.ico','Assets/AppIcon.png')){
  if(!(Test-Path -LiteralPath (Join-Path $publish $required))){throw "Missing published resource: $required"}
 }
 & $tool pack --packId Kidda.BridgeCrewModLauncher --packVersion $Version --packDir $publish --mainExe BridgeCrew.Launcher.exe --packTitle 'Bridge Crew Mod Launcher' --packAuthors Kiddabob --icon (Join-Path $PSScriptRoot 'WinUI/Assets/AppIcon.ico') --runtime win-x64 --framework vcredist143-x64 --shortcuts 'Desktop,StartMenuRoot' --outputDir $OutputDirectory

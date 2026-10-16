@@ -1,0 +1,8 @@
+Generated using the built-in image-generation tool on 2026-10-16.
+Reference silhouette: https://www.nicepng.com/maxp/u2q8i1o0o0u2y3i1/
+The reference is not distributed in this repository.
+
+Create a premium Windows application icon: the actual classic Star Trek Starfleet Command delta emblem using the provided image as the EXACT outer silhouette reference, plus a polished chrome spanner laid diagonally across its front. Preserve this distinctive narrow curved asymmetric arrowhead shape with very tall top point, long lower-left leg, shorter lower-right leg, and sweeping arched bottom cutout. Do not replace it with a generic triangle, chevron or A. Render the delta in rich polished gold, thick subtly extruded beveled edges, dark recessed edge accents, realistic shiny 3D metal reflections, crisp bright studio highlights, luxurious but clean. The central elongated command star may be subtly recessed, secondary to the spanner. One instantly recognizable open-ended silver spanner runs diagonally from bottom-left to upper-right, open jaw at upper-right, strong simple silhouette and short rounded handle end, raised on top of the delta with a soft contact shadow. Front-on view so the emblem outline matches the reference, minimal perspective. Make the icon highly readable at small taskbar sizes. Single centered combined object, occupies about 88 percent of square canvas height with comfortable padding, no clipping. Fully transparent background, no background tile, no circle, no text, no letters, no watermark, no extra objects. Deliver a square 1024x1024 transparent PNG.
+
+AppIcon.png is the generated transparent master. Build-Icon.ps1 converts it
+into the multi-resolution Windows ICO without changing the artwork.
