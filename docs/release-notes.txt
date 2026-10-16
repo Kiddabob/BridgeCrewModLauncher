@@ -6,5 +6,6 @@ Early launcher preview: sample JSON files only. Live accounts, hosted mods,
 the in-game menu and actual game joining are not connected. No game files are
 included or changed. SDK authoring tools remain a later milestone.
 
-Install the Windows x64 Setup.exe asset. Settings and subscriptions remain
+Install the Windows x64 Setup.exe asset. The installer handles the native
+Visual C++ prerequisite if it is missing. Settings and subscriptions remain
 outside the app installation and are preserved across updates.

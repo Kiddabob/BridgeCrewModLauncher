@@ -14,7 +14,7 @@ if($LASTEXITCODE -ne 0){throw 'Publish failed.'}
 foreach($required in @('BridgeCrew.Launcher.exe','App.xbf','MainWindow.xbf','BridgeCrew.Launcher.pri','Assets/AppIcon.ico')){
  if(!(Test-Path -LiteralPath (Join-Path $publish $required))){throw "Missing published resource: $required"}
 }
-& $tool pack --packId Kidda.BridgeCrewModLauncher --packVersion $Version --packDir $publish --mainExe BridgeCrew.Launcher.exe --packTitle 'Bridge Crew Mod Launcher' --packAuthors Kiddabob --icon (Join-Path $PSScriptRoot 'WinUI/Assets/AppIcon.ico') --runtime win-x64 --shortcuts 'Desktop,StartMenuRoot' --outputDir $OutputDirectory
+& $tool pack --packId Kidda.BridgeCrewModLauncher --packVersion $Version --packDir $publish --mainExe BridgeCrew.Launcher.exe --packTitle 'Bridge Crew Mod Launcher' --packAuthors Kiddabob --icon (Join-Path $PSScriptRoot 'WinUI/Assets/AppIcon.ico') --runtime win-x64 --framework vcredist143-x64 --shortcuts 'Desktop,StartMenuRoot' --outputDir $OutputDirectory
 if($LASTEXITCODE -ne 0){throw 'Installer packaging failed.'}
 Get-ChildItem -LiteralPath $OutputDirectory -File | Where-Object{$_.Extension -in '.exe','.nupkg','.zip','.json'} | ForEach-Object{
  $hash=Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256

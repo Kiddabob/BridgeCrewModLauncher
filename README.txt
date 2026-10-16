@@ -11,6 +11,7 @@ https://github.com/Kiddabob/BridgeCrewModLauncher/releases/latest
 Use Kidda.BridgeCrewModLauncher-win-Setup.exe from a release. The per-user
 installer creates Start Menu and Desktop shortcuts and an uninstall entry.
 Windows x64; the app includes its .NET and Windows App SDK runtime dependencies.
+The installer checks the native Visual C++ runtime and installs it if missing.
 Settings -> App updates checks published GitHub releases and can download and
 apply an update with a launcher restart. Pack subscriptions live separately in
 %LOCALAPPDATA%\Kidda\BridgeCrewModLauncher and survive app updates.
@@ -39,7 +40,7 @@ from nuget.org. No game files or extracted proprietary assets are required.
   ./Start-Preview.ps1
 
 Create an installer:
-  ./Package.ps1 -Version 0.2.1
+  ./Package.ps1 -Version 0.2.2
 
 Build.ps1 uses WinUI, not the earlier WPF prototype. Release assets contain the
 launcher only; no game assemblies, DLC, game assets or inspection dumps.
