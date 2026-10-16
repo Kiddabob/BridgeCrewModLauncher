@@ -1,0 +1,46 @@
+Launcher architecture and milestones
+====================================
+
+The launcher and game plugin are distinct components. The launcher uses .NET 10
+and native WinUI 3. The future plugin must target Bridge Crew's old Unity/Mono
+runtime and is not included in this release. The publisher/account service and
+the production lobby directory are also separate future components.
+
+Desired host/guest flow
+-----------------------
+A host selects a pinned pack, enters a real modded room, and the plugin advertises
+that room's identity, pack lock and compatibility group. A guest finds it through
+friends, an invitation or search, reviews each mod's description, and consents
+to subscribe. The launcher selects that edition's payloads and verifies them.
+If activation needs a game restart, remember the intended lobby, obtain consent
+to restart, then recheck the lobby and handshake before reporting a successful
+join. A cached pack or an advertisement is not evidence of entering a game.
+
+Pack rules
+----------
+A manifest includes pinned mod versions, dependencies, load order, descriptions,
+shared files and Meta/Steam variants. A canonical SHA-256 locks the complete
+manifest, including all variants and the text reviewed by the player. Clients
+compare that shared identity but download their own edition's payloads. Content
+hashes check integrity relative to the reviewed manifest, not publisher trust.
+Production publication needs authenticated origin and immutable release IDs.
+
+App updates
+-----------
+Velopack bootstraps before WinUI startup. The installer owns the application's
+replaceable current folder, shortcuts and uninstall registration. Settings,
+cached content, subscriptions and exports use a separate LocalAppData folder.
+GitHub releases serve the update feed and content packages. Checking, downloading
+and applying an update are separate operations. Applying restarts the launcher.
+
+Confirmed scope and deferred work
+---------------------------------
+The sample directory binds loopback only and has no production account system.
+No game API integration or public mod-hosting service is shipped. Declared build
+support in a pack is not independent qualification of Meta/Steam interoperability.
+
+Next: qualify a minimal plugin on the actual Meta and Steam builds, then test
+each mod category. Add real room presence/readiness, the in-game Modded Crew
+menu, controlled restart/reconnect, accounts and hosted packs in that order.
+Keep SDK authoring tools in a separate later project. Its contracts and launcher
+tool integration should follow tested mod types, not speculative engine APIs.

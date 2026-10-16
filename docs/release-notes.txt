@@ -1,0 +1,10 @@
+Native WinUI 3 launcher with Windows 11 styling, Mica, system/light/dark themes,
+sample lobby browsing, mod subscription review, separate Meta PC/Steam payloads,
+verified caching, a subscription library, and GitHub-backed app updates.
+
+Early launcher preview: sample JSON files only. Live accounts, hosted mods,
+the in-game menu and actual game joining are not connected. No game files are
+included or changed. SDK authoring tools remain a later milestone.
+
+Install the Windows x64 Setup.exe asset. Settings and subscriptions remain
+outside the app installation and are preserved across updates.
