@@ -1,3 +1,7 @@
+Version 0.2.4 explicitly registers the launcher's taskbar identity, relaunch
+icon, and small/large window icons. Existing launcher shortcuts reference a
+content-named icon file to avoid reusing a cached executable icon after updates.
+
 Version 0.2.3 adds a shiny gold Starfleet delta with a chrome spanner as the
 app, window, shortcut and installer icon. The transparent artwork includes
 dedicated Windows icon sizes from 16 through 256 pixels.

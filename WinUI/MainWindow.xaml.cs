@@ -17,6 +17,7 @@ public sealed partial class MainWindow : Window
     private readonly CancellationTokenSource lifetime = new();
     private readonly PackCache cache = new(AppPaths.Root);
     private readonly UpdateService updates = new();
+    private readonly WindowShellIcon shellIcon;
     private LobbyAdvertisement[] allLobbies = [];
     private PackPlan? selectedPlan;
     private LobbyAdvertisement? selectedLobby;
@@ -30,12 +31,13 @@ public sealed partial class MainWindow : Window
         SystemBackdrop = new MicaBackdrop();
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1300,900));
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory,"Assets","AppIcon.ico"));
+        shellIcon = new WindowShellIcon(WinRT.Interop.WindowNative.GetWindowHandle(this));
         AppPaths.LoadSettings();
         Theme.SelectedIndex = AppPaths.Theme switch { "light" => 1, "dark" => 2, _ => 0 };
         ApplyTheme(); Root.ActualThemeChanged += (_,_) => UpdateCaption();
         Root.SizeChanged += (_,_) => AdaptLayout();
         CrewColumns.SizeChanged += (_,_) => AdaptLayout();
-        Closed += (_,_) => lifetime.Cancel();
+        Closed += (_,_) => { lifetime.Cancel(); shellIcon.Dispose(); };
         VersionText.Text = $"Bridge Crew Mod Launcher · {AppPaths.Version} · WinUI 3 · Windows x64";
         ready = true;
     }
@@ -229,6 +231,7 @@ public sealed partial class MainWindow : Window
         try
         {
             await SelectLobby();Check(selectedPlan?.Edition=="meta","Native Meta edition selection");
+            Check(shellIcon.Verify(),"Window taskbar identity and both icon sizes registered");
             Edition.SelectedIndex=1;await SelectLobby();Check(selectedPlan?.Edition=="steam","Native Steam edition selection");
             var plan=selectedPlan!;await cache.Subscribe(plan,plan.PackLock,OpenExample,lifetime.Token);Check(await cache.IsCached(plan),"Launcher cache subscription");
             await cache.PreparePreviewJoin(plan,selectedLobby!,RefreshExample,lifetime.Token);checks.Add("Preview join preparation explicitly unconnected");

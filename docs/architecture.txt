@@ -32,6 +32,10 @@ replaceable current folder, shortcuts and uninstall registration. Settings,
 cached content, subscriptions and exports use a separate LocalAppData folder.
 GitHub releases serve the update feed and content packages. Checking, downloading
 and applying an update are separate operations. Applying restarts the launcher.
+The native window explicitly registers the installed taskbar identity and a
+relaunch icon, plus both window icon sizes. Existing owned shortcuts use an
+icon named by its content hash, avoiding executable-icon cache reuse. Missing
+shortcuts stay missing; the app does not change taskbar pins or Explorer caches.
 
 Confirmed scope and deferred work
 ---------------------------------
