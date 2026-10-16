@@ -23,7 +23,6 @@ public sealed partial class MainWindow : Window
     private bool ready, busy, updateBusy, initialized;
     private int selectionGeneration;
     private string? appliedQuery;
-    private bool? expandedNavigation;
     public MainWindow()
     {
         InitializeComponent(); Title = "Bridge Crew Mod Launcher";
@@ -36,8 +35,6 @@ public sealed partial class MainWindow : Window
         ApplyTheme(); Root.ActualThemeChanged += (_,_) => UpdateCaption();
         Root.SizeChanged += (_,_) => AdaptLayout();
         CrewColumns.SizeChanged += (_,_) => AdaptLayout();
-        Navigation.PaneClosed += (_,_) => PaneFooter.Visibility=Visibility.Collapsed;
-        Navigation.PaneOpened += (_,_) => PaneFooter.Visibility=Visibility.Visible;
         Closed += (_,_) => lifetime.Cancel();
         VersionText.Text = $"Bridge Crew Mod Launcher · {AppPaths.Version} · WinUI 3 · Windows x64";
         ready = true;
@@ -68,14 +65,6 @@ public sealed partial class MainWindow : Window
     }
     private void AdaptLayout()
     {
-        var expanded=Root.ActualWidth>=1100;
-        if(expandedNavigation!=expanded)
-        {
-            expandedNavigation=expanded;
-            Navigation.PaneDisplayMode=expanded?NavigationViewPaneDisplayMode.Left:NavigationViewPaneDisplayMode.LeftCompact;
-            Navigation.IsPaneOpen=expanded;
-        }
-        PaneFooter.Visibility=Navigation.IsPaneOpen?Visibility.Visible:Visibility.Collapsed;
         var stacked = CrewColumns.ActualWidth < 760;
         CrewColumns.Height = stacked ? 860 : 560;
         LobbyColumn.Width = new GridLength(stacked ? 1 : 300,stacked ? GridUnitType.Star : GridUnitType.Pixel);

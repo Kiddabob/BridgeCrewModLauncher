@@ -39,7 +39,7 @@ from nuget.org. No game files or extracted proprietary assets are required.
   ./Start-Preview.ps1
 
 Create an installer:
-  ./Package.ps1 -Version 0.2.0
+  ./Package.ps1 -Version 0.2.1
 
 Build.ps1 uses WinUI, not the earlier WPF prototype. Release assets contain the
 launcher only; no game assemblies, DLC, game assets or inspection dumps.

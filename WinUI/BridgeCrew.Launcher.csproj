@@ -6,7 +6,7 @@
   <Platforms>x64</Platforms><PlatformTarget>x64</PlatformTarget><RuntimeIdentifier>win-x64</RuntimeIdentifier>
   <ApplicationManifest>app.manifest</ApplicationManifest><ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
   <AssemblyName>BridgeCrew.Launcher</AssemblyName><RootNamespace>BridgeCrew.Launcher</RootNamespace>
-  <Version>0.2.0</Version><DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+  <Version>0.2.1</Version><DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   <StartupObject>BridgeCrew.Launcher.Program</StartupObject><PublishTrimmed>false</PublishTrimmed>
  </PropertyGroup>
  <ItemGroup>
