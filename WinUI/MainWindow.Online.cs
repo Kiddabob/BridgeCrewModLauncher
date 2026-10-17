@@ -108,6 +108,7 @@ public sealed partial class MainWindow
         }
         finally{AccountPassword.Password="";RecoveryCode.Password="";}
         service?.Dispose();service=new CrewServiceClient(candidate.BaseUri,session.AccessToken);account=session.User;sampleMode=false;DirectoryMode();
+        UpdateAccount();
         UseServiceCache();
         if(session.RecoveryCode!=null)
         {

@@ -51,7 +51,7 @@ public sealed partial class MainWindow : Window
             var scale=Root.XamlRoot.RasterizationScale;
             var work=Microsoft.UI.Windowing.DisplayArea.GetFromWindowId(AppWindow.Id,Microsoft.UI.Windowing.DisplayAreaFallback.Nearest).WorkArea;
             AppWindow.Resize(new Windows.Graphics.SizeInt32((int)Math.Min(1320*scale,work.Width*0.95),(int)Math.Min(900*scale,work.Height*0.95)));
-            if(sampleMode){DirectoryMode();Refresh();}else await RestoreService(); UpdateCaption();
+            if(sampleMode){DirectoryMode();Refresh();}else await OnlineAction(RestoreService); UpdateCaption();
             var args=Environment.GetCommandLineArgs();
             var testIndex=Array.IndexOf(args,"--self-test");
             if(testIndex>=0 && testIndex+1<args.Length) { await SelfTest(args[testIndex+1]); return; }

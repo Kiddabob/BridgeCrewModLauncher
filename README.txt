@@ -13,7 +13,7 @@ Start Menu/Desktop shortcuts and an uninstall entry. Windows x64; .NET and
 Windows App SDK runtimes are included. The installer handles the native C++
 runtime if missing. Settings -> App updates checks and applies GitHub releases.
 
-Online crew service (0.3.0)
+Online crew service (0.3.1)
 ---------------------------
 Open Online, create an account and save the recovery code. Add friends, review
 published packs, host a launcher room or find a friend’s room and subscribe.
@@ -54,7 +54,7 @@ No game files or extracted proprietary assets are required.
   ./Test.ps1
   ./Test-Backend.ps1 -Native
   ./Start-Preview.ps1
-  ./Package.ps1 -Version 0.3.0
+  ./Package.ps1 -Version 0.3.1
 
 The PHP integration runtime is checksum-pinned under .tools, with no global
 installation or PATH change. The local API tests own their temporary accounts,

@@ -71,6 +71,7 @@ public sealed class CrewServiceClient : IDisposable
     private void Authorize(HttpRequestMessage request){if(token!=null)request.Headers.Authorization=new AuthenticationHeaderValue("Bearer",token);}
     private async Task<T> Send<T>(HttpMethod method,string path,object? body,CancellationToken ct)
     {
+        using var deadline=CancellationTokenSource.CreateLinkedTokenSource(ct);deadline.CancelAfter(TimeSpan.FromSeconds(30));ct=deadline.Token;
         using var request=new HttpRequestMessage(method,path);Authorize(request);
         if(body!=null)request.Content=JsonContent.Create(body,options:PackJson.Options);
         using var response=await http.SendAsync(request,HttpCompletionOption.ResponseHeadersRead,ct);

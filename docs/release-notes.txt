@@ -1,4 +1,4 @@
-Version 0.3.0 connects the native WinUI launcher to a persistent HTTPS crew
+Version 0.3.1 connects the native WinUI launcher to a persistent HTTPS crew
 service. Create an account, save its recovery code, add friends, discover
 published packs, review subscriptions, host a four-person launcher room and
 share invitations. Meta PC and Steam payloads retain separate resolution and
