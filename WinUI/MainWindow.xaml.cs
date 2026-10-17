@@ -15,7 +15,7 @@ public sealed partial class MainWindow : Window
 {
     private readonly PreviewCatalog catalog = new();
     private readonly CancellationTokenSource lifetime = new();
-    private readonly PackCache cache = new(AppPaths.Root);
+    private PackCache cache = new(AppPaths.Root);
     private readonly UpdateService updates = new();
     private readonly WindowShellIcon shellIcon;
     private LobbyAdvertisement[] allLobbies = [];
@@ -37,7 +37,7 @@ public sealed partial class MainWindow : Window
         ApplyTheme(); Root.ActualThemeChanged += (_,_) => UpdateCaption();
         Root.SizeChanged += (_,_) => AdaptLayout();
         CrewColumns.SizeChanged += (_,_) => AdaptLayout();
-        Closed += (_,_) => { lifetime.Cancel(); shellIcon.Dispose(); };
+        Closed += (_,_) => { heartbeat?.Stop(); lifetime.Cancel(); service?.Dispose(); shellIcon.Dispose(); };
         VersionText.Text = $"Bridge Crew Mod Launcher · {AppPaths.Version} · WinUI 3 · Windows x64";
         ready = true;
     }
@@ -46,10 +46,12 @@ public sealed partial class MainWindow : Window
         if(initialized)return; initialized=true;
         try
         {
+            var earlyArgs=Environment.GetCommandLineArgs();var serviceTest=Array.IndexOf(earlyArgs,"--service-self-test");
+            if(serviceTest>=0&&serviceTest+1<earlyArgs.Length){await ServiceSelfTest(earlyArgs[serviceTest+1]);return;}
             var scale=Root.XamlRoot.RasterizationScale;
             var work=Microsoft.UI.Windowing.DisplayArea.GetFromWindowId(AppWindow.Id,Microsoft.UI.Windowing.DisplayAreaFallback.Nearest).WorkArea;
             AppWindow.Resize(new Windows.Graphics.SizeInt32((int)Math.Min(1320*scale,work.Width*0.95),(int)Math.Min(900*scale,work.Height*0.95)));
-            Refresh(); UpdateCaption();
+            if(sampleMode){DirectoryMode();Refresh();}else await RestoreService(); UpdateCaption();
             var args=Environment.GetCommandLineArgs();
             var testIndex=Array.IndexOf(args,"--self-test");
             if(testIndex>=0 && testIndex+1<args.Length) { await SelfTest(args[testIndex+1]); return; }
@@ -83,6 +85,7 @@ public sealed partial class MainWindow : Window
     }
     private void Refresh()
     {
+        if(!sampleMode){_=OnlineAction(async()=>{if(account==null)throw new InvalidOperationException("Sign in on the Online page first.");await RefreshOnline();});return;}
         if(busy)return;allLobbies=catalog.Lobbies();appliedQuery=null;Filter();
         SetStatus("Sample lobbies ready. Your game installation is unchanged.");
         if(Lobbies.Items.Count>0)Lobbies.SelectedIndex=0;
@@ -111,24 +114,35 @@ public sealed partial class MainWindow : Window
         try
         {
             var edition=(string)((ComboBoxItem)Edition.SelectedItem).Tag;
-            var pack=catalog.Packs.Single(p=>p.Id==lobby.PackId&&p.Version==lobby.PackVersion);
-            var plan=PackRules.Plan(pack,edition,"preview-"+edition);
-            PackRules.ValidateLobby(lobby,plan,DateTimeOffset.UtcNow);
-            var cached=await cache.IsCached(plan,lifetime.Token);
+            var pack=sampleMode?catalog.Packs.Single(p=>p.Id==lobby.PackId&&p.Version==lobby.PackVersion):await SignedService().Pack(lobby.PackId,lobby.PackVersion,lifetime.Token);
             if(generation!=selectionGeneration)return;
-            selectedPlan=plan;selectedLobby=lobby;PackTitle.Text=pack.Name;PackDescription.Text=pack.Description;
-            PackSummary.Text=$"{pack.Mods.Length} examples · v{pack.Version} · {plan.DownloadBytes:N0} bytes · {(edition=="meta"?"Meta PC":"Steam PC")}\nPack {plan.PackLock[..16]}…";
+            var build="preview-"+edition;
+            if(!sampleMode)
+            {
+                if(!pack.SupportedBuilds.TryGetValue(edition,out var builds))throw new InvalidDataException("The publisher has not declared support for this PC edition.");
+                var selected=BuildProfile.SelectedItem as string;changingBuilds=true;
+                try{BuildProfile.ItemsSource=builds;BuildProfile.SelectedItem=selected!=null&&builds.Contains(selected)?selected:builds[0];build=(string)BuildProfile.SelectedItem;}
+                finally{changingBuilds=false;}
+            }
+            var plan=PackRules.Plan(pack,edition,build);
+            PackRules.ValidateLobby(lobby,plan,DateTimeOffset.UtcNow);
+            var publisher=sampleMode?null:await SignedService().Release(pack.Id,pack.Version,lifetime.Token);
+            if(publisher!=null&&publisher.PackLock!=plan.PackLock)throw new InvalidDataException("Published pack identity changed.");
+            var cached=await cache.IsSubscribed(plan,lifetime.Token);
+            if(generation!=selectionGeneration)return;
+            selectedPlan=plan;selectedLobby=lobby;PackTitle.Text=pack.Name;PackDescription.Text=pack.Description+(publisher==null?"":$"\nPublisher account: {publisher.PublisherName} ({publisher.PublisherId})");
+            PackSummary.Text=$"{pack.Mods.Length} mods · v{pack.Version} · {plan.DownloadBytes:N0} bytes · {(edition=="meta"?"Meta PC":"Steam PC")}\nPack {plan.PackLock[..16]}…";
             Mods.ItemsSource=pack.Mods;SubscribeButton.IsEnabled=!busy;ExportButton.IsEnabled=!busy;JoinButton.IsEnabled=cached&&!busy;
         }
         catch(Exception ex){if(generation==selectionGeneration)SetStatus(ex.Message,InfoBarSeverity.Error);}
     }
     private Task<Stream> OpenExample(string hash,CancellationToken ct)
-    {ct.ThrowIfCancellationRequested();return Task.FromResult<Stream>(new MemoryStream(catalog.Content[hash],false));}
+    {ct.ThrowIfCancellationRequested();return sampleMode?Task.FromResult<Stream>(new MemoryStream(catalog.Content[hash],false)):SignedService().OpenFile(hash,ct);}
     private Task<LobbyAdvertisement> RefreshExample(string id,CancellationToken ct)
-    {ct.ThrowIfCancellationRequested();return Task.FromResult(catalog.Lobbies().Single(l=>l.Id==id));}
+    {ct.ThrowIfCancellationRequested();return sampleMode?Task.FromResult(catalog.Lobbies().Single(l=>l.Id==id)):id==invitedLobbyId&&invitation!=null&&activeRoom?.Advertisement.Id!=id?SignedService().ResolveInvite(invitation,ct):SignedService().Lobby(id,ct);}
     private async void SubscribeClicked(object sender,RoutedEventArgs e)
     {
-        if(busy||selectedPlan is not {} plan||selectedLobby is not {} lobby)return;
+        if(busy||onlineBusy||selectedPlan is not {} plan||selectedLobby is not {} lobby)return;
         SetBusy(true);
         try
         {
@@ -136,7 +150,7 @@ public sealed partial class MainWindow : Window
             foreach(var mod in plan.Manifest.Mods)
             {
                 content.Children.Add(new TextBlock{Text=$"{mod.Name} · {mod.Version}",FontWeight=Microsoft.UI.Text.FontWeights.SemiBold,TextWrapping=TextWrapping.Wrap});
-                content.Children.Add(new TextBlock{Text=$"{mod.Author}\n{mod.Description}\n"+(mod.ContainsCode?"Includes executable code.":"Sample data files only."),TextWrapping=TextWrapping.Wrap});
+                content.Children.Add(new TextBlock{Text=$"{mod.Author}\n{mod.Description}\n"+(mod.ContainsCode?"Includes executable code.":"Publisher marks this mod as data only."),TextWrapping=TextWrapping.Wrap});
             }
             content.Children.Add(new TextBlock{Text=$"Download {plan.DownloadBytes:N0} bytes. The game is not modified.",TextWrapping=TextWrapping.Wrap});
             var dialog=new ContentDialog{XamlRoot=Root.XamlRoot,Title=$"Subscribe to {plan.Manifest.Name}?",Content=new ScrollViewer{Content=content,MaxHeight=450},PrimaryButtonText="Subscribe",CloseButtonText="Cancel",DefaultButton=ContentDialogButton.Close};
@@ -145,17 +159,25 @@ public sealed partial class MainWindow : Window
             if(current.Revision!=lobby.Revision)throw new InvalidDataException("Lobby changed. Review its pack again.");
             PackRules.ValidateLobby(current,plan,DateTimeOffset.UtcNow);
             await cache.Subscribe(plan,plan.PackLock,OpenExample,lifetime.Token);
-            SetStatus("Subscribed. All sample files are verified and stored outside the game.",InfoBarSeverity.Success);
+            SetStatus("Subscribed. All files are verified and stored outside the game.",InfoBarSeverity.Success);
         }
         catch(Exception ex){SetStatus(ex.Message,InfoBarSeverity.Error);}
         finally{SetBusy(false);JoinButton.IsEnabled=await CachedSafely(plan);}
     }
     private async Task<bool> CachedSafely(PackPlan plan)
-    {try{return !lifetime.IsCancellationRequested&&await cache.IsCached(plan,lifetime.Token);}catch(Exception ex)when(ex is IOException or OperationCanceledException){return false;}}
+    {try{return !lifetime.IsCancellationRequested&&await cache.IsSubscribed(plan,lifetime.Token);}catch(Exception ex)when(ex is IOException or OperationCanceledException){return false;}}
     private async void JoinClicked(object sender,RoutedEventArgs e)
     {
-        if(busy||selectedPlan is not {} plan||selectedLobby is not {} lobby)return;SetBusy(true);
-        try{await cache.PreparePreviewJoin(plan,lobby,RefreshExample,lifetime.Token);SetStatus("Preview join request prepared. Live game joining is not connected yet.",InfoBarSeverity.Success);}
+        if(busy||onlineBusy||selectedPlan is not {} plan||selectedLobby is not {} lobby)return;SetBusy(true);
+        try{
+            if(sampleMode){await cache.PreparePreviewJoin(plan,lobby,RefreshExample,lifetime.Token);SetStatus("Preview join request prepared. Live game joining is not connected yet.",InfoBarSeverity.Success);}
+            else{
+                if(!await cache.IsSubscribed(plan,lifetime.Token))throw new InvalidDataException("Review and subscribe to this pack before joining.");
+                var current=await RefreshExample(lobby.Id,lifetime.Token);if(current.Revision!=lobby.Revision)throw new InvalidDataException("Lobby changed. Review its pack again.");PackRules.ValidateLobby(current,plan,DateTimeOffset.UtcNow);
+                var room=await SignedService().Join(lobby.Id,new(lobby.Revision,plan.PackLock,plan.Edition,plan.Build,lobby.Id==invitedLobbyId?invitation:null),lifetime.Token);
+                SetRoom(room,plan);ShowOnline();OnlineMessage("Joined the launcher room. Bridge Crew game connection is not active yet.",InfoBarSeverity.Success);
+            }
+        }
         catch(Exception ex){SetStatus(ex.Message,InfoBarSeverity.Error);}
         finally{SetBusy(false);JoinButton.IsEnabled=await CachedSafely(plan);}
     }
@@ -177,12 +199,15 @@ public sealed partial class MainWindow : Window
         CrewPage.Visibility=page=="crew"?Visibility.Visible:Visibility.Collapsed;
         PacksPage.Visibility=page=="packs"?Visibility.Visible:Visibility.Collapsed;
         SettingsPage.Visibility=page=="settings"?Visibility.Visible:Visibility.Collapsed;
+        OnlinePage.Visibility=page=="online"?Visibility.Visible:Visibility.Collapsed;
         if(page=="packs")RefreshSubscriptions();
     }
     private void RefreshSubscriptions()
     {
-        var folder=Path.Combine(AppPaths.Root,"subscriptions");var items=new List<string>();
-        if(Directory.Exists(folder))foreach(var path in Directory.EnumerateFiles(folder,"*.json",SearchOption.AllDirectories))
+        var folder=AppPaths.Root;var items=new List<string>();
+        var roots=new List<string>{Path.Combine(folder,"subscriptions")};var servicesFolder=Path.Combine(folder,"services");
+        if(Directory.Exists(servicesFolder))roots.AddRange(Directory.EnumerateDirectories(servicesFolder).Select(p=>Path.Combine(p,"subscriptions")));
+        foreach(var subscriptionRoot in roots.Where(Directory.Exists))foreach(var path in Directory.EnumerateFiles(subscriptionRoot,"*.json",SearchOption.AllDirectories))
         {
             try{var p=JsonSerializer.Deserialize<PackPlan>(File.ReadAllText(path),PackJson.Options);if(p!=null)items.Add($"{p.Manifest.Name} · {p.Manifest.Version} · {(p.Edition=="meta"?"Meta PC":"Steam PC")}\nPack {p.PackLock[..16]}…");}
             catch(Exception ex)when(ex is IOException or JsonException){AppPaths.Log("Cannot read subscription: "+ex.Message);}

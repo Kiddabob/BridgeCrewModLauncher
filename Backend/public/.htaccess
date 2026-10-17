@@ -1,0 +1,11 @@
+# This handler applies only to BridgeCrew, not the parent website.
+<FilesMatch "\.php$">
+ SetHandler application/x-lsphp84
+</FilesMatch>
+Options -Indexes
+RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+RewriteRule ^api/v1/(.*)$ index.php?route=$1 [QSA,L]
+<FilesMatch "^\.">
+ Require all denied
+</FilesMatch>

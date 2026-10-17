@@ -1,50 +1,72 @@
 Launcher architecture and milestones
 ====================================
 
-The launcher and game plugin are distinct components. The launcher uses .NET 10
-and native WinUI 3. The future plugin must target Bridge Crew's old Unity/Mono
-runtime and is not included in this release. The publisher/account service and
-the production lobby directory are also separate future components.
+The launcher uses .NET 10 and native WinUI 3. The separate PHP 8.4/SQLite service
+provides persistent accounts, publishing, friends and launcher rooms. Its public
+API and private data live in isolated folders on existing Hostinger hosting.
+The future game plugin must target Bridge Crew's old Unity/Mono runtime and is
+not included. No game installation is altered or launched by this milestone.
 
-Desired host/guest flow
------------------------
-A host selects a pinned pack, enters a real modded room, and the plugin advertises
-that room's identity, pack lock and compatibility group. A guest finds it through
-friends, an invitation or search, reviews each mod's description, and consents
-to subscribe. The launcher selects that edition's payloads and verifies them.
-If activation needs a game restart, remember the intended lobby, obtain consent
-to restart, then recheck the lobby and handshake before reporting a successful
-join. A cached pack or an advertisement is not evidence of entering a game.
+Host/guest flow
+---------------
+A host signs in, selects an immutable published pack, chooses its declared
+edition/build, reviews each mod and subscribes, then opens a launcher room.
+A guest finds the room publicly, through an accepted friendship or by explicit
+invitation, reviews its pack, subscribes to its own edition's verified payloads,
+and joins the launcher room. Readiness rechecks the reviewed subscription.
+
+The server checks identity, visibility, blocks, invitations, capacity, pack
+lock and room revision. Rooms expire after 120 seconds without host renewal;
+active clients heartbeat every 30 seconds. A guest cannot keep an absent host's
+room alive. Existing unexpired membership can be restored after app restart.
+Every room reports gameConnected=false and status=launcher-room-only.
+
+Game connection remains a separate later component: a qualified plugin must
+advertise the actual game room, bind that room to the pinned pack, and confirm
+the game handshake before the launcher may report in-game joining. A cached
+pack, backend room or ready flag is not evidence of entering the game.
 
 Pack rules
 ----------
-A manifest includes pinned mod versions, dependencies, load order, descriptions,
-shared files and Meta/Steam variants. A canonical SHA-256 locks the complete
-manifest, including all variants and the text reviewed by the player. Clients
-compare that shared identity but download their own edition's payloads. Content
-hashes check integrity relative to the reviewed manifest, not publisher trust.
-Production publication needs authenticated origin and immutable release IDs.
+The manifest pins mod versions, dependencies, load order, descriptions, shared
+files, Meta/Steam variants and declared builds. Canonical SHA-256 locks the
+whole manifest. PHP and .NET lock interoperability is tested with Unicode,
+HTML-sensitive characters and literal escape sequences. Clients revalidate all
+metadata and selected payload sizes/hashes. Cached files alone do not replace
+consent to a particular manifest. Online caches are scoped to their service.
+
+Publishers require owner approval. Files are uploaded to private storage and
+verified before immutable publication; a publisher can only reference owned
+payloads and cannot take another publisher's pack ID. Publisher account identity
+is shown separately from mod author text. Owner moderation can hide releases
+or disable accounts. It cannot revoke files already downloaded to a client.
+
+Accounts and hosting
+--------------------
+Passwords use Argon2id. Sessions and recovery secrets are stored hashed; reset
+rotates the recovery secret and revokes prior sessions. Authentication changes
+are checked inside database transactions. API requests use HTTPS; metadata
+and uploads have size/rate/storage caps. API clients refuse redirects. The
+native app encrypts saved sign-in state for its Windows user and service URL.
+
+SQLite and payloads are outside public_html. Only BridgeCrew's .htaccess selects
+PHP 8.4. Other site files, PHP settings, database configuration and cron jobs
+are preserved. See Backend/README.txt for concrete paths, limits and commands.
+No daemon, paid additional hosting or external database service is required.
 
 App updates
 -----------
-Velopack bootstraps before WinUI startup. The installer owns the application's
-replaceable current folder, shortcuts and uninstall registration. Settings,
-cached content, subscriptions and exports use a separate LocalAppData folder.
-GitHub releases serve the update feed and content packages. Checking, downloading
-and applying an update are separate operations. Applying restarts the launcher.
-The native window explicitly registers the installed taskbar identity and a
-relaunch icon, plus both window icon sizes. Existing owned shortcuts use an
-icon named by its content hash, avoiding executable-icon cache reuse. Missing
-shortcuts stay missing; the app does not change taskbar pins or Explorer caches.
+Velopack runs before WinUI startup. The installer owns its replaceable current
+folder, shortcuts and uninstall registration; user data lives separately.
+GitHub releases supply the app update feed. Download/apply/restart are separate
+operations. The native window explicitly registers its taskbar identity and
+Starfleet/spanner relaunch, small and large icons; owned shortcuts reference a
+content-named icon. Missing shortcuts stay missing; taskbar pins are unchanged.
+The user confirmed the actual taskbar appearance for 0.2.4 on 2026-10-17.
 
-Confirmed scope and deferred work
----------------------------------
-The sample directory binds loopback only and has no production account system.
-No game API integration or public mod-hosting service is shipped. Declared build
-support in a pack is not independent qualification of Meta/Steam interoperability.
-
-Next: qualify a minimal plugin on the actual Meta and Steam builds, then test
-each mod category. Add real room presence/readiness, the in-game Modded Crew
-menu, controlled restart/reconnect, accounts and hosted packs in that order.
-Keep SDK authoring tools in a separate later project. Its contracts and launcher
-tool integration should follow tested mod types, not speculative engine APIs.
+Deferred
+--------
+Qualify a minimal plugin on actual Meta/Steam game builds, then each mod type.
+After qualification, implement game-room advertisement/handshake, the in-game
+Modded Crew menu, activation/rollback and controlled restart/reconnect. Keep
+SDK authoring tools separate and base them on tested engine/plugin contracts.

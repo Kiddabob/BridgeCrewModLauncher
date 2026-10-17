@@ -17,7 +17,7 @@ jobs:
       - name: Build WinUI and pack components
         shell: pwsh
         run: ./Build.ps1
-      - name: Test pack and HTTP subscription flow
+      - name: Test packs and authenticated PHP service over HTTP
         shell: pwsh
         run: ./Test.ps1
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -25,3 +25,8 @@ jobs:
         with:
           name: pack-check-results
           path: artifacts/checks/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: backend-check-results
+          path: artifacts/backend-checks/**/results.json

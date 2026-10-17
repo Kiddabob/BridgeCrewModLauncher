@@ -15,3 +15,4 @@ try{
  dotnet (Join-Path $PSScriptRoot "Checks/bin/$Configuration/net10.0/BridgeCrew.Checks.dll") (Join-Path $output 'state') --http | Tee-Object -FilePath (Join-Path $output 'results.txt')
  if($LASTEXITCODE -ne 0){throw 'Pack checks failed.'}
 }finally{if($null -ne $helper -and !$helper.HasExited){Stop-Process -Id $helper.Id}}
+& (Join-Path $PSScriptRoot 'Test-Backend.ps1') -Configuration $Configuration

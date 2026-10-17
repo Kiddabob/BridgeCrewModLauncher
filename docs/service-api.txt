@@ -1,0 +1,61 @@
+Crew service API v1
+===================
+Base: https://kiddabob.co.uk/BridgeCrew/api/v1/
+JSON metadata and application/octet-stream payloads. Errors are JSON {error}.
+Authenticated operations require Authorization: Bearer <session-token>.
+JSON property names and DTOs are in Core/ServiceModels.cs and Models.cs.
+
+Public reads
+  GET health                           Protocol, mode, upload limit; gameConnected=false
+  GET packs?q=                         Up to 100 visible immutable release summaries
+  GET packs/{id}/{version}              PackManifest
+  GET releases/{id}/{version}           Release summary with publisher identity and lock
+  GET files/{sha256}                   Only content referenced by visible releases
+
+Accounts
+  POST auth/register                   username, displayName, password
+  POST auth/login                      username, password
+  POST auth/recover                    username, recoveryCode, password
+  GET  auth/me                         Current public account and publisher permission
+  POST auth/logout                     Revoke the presented session
+  POST auth/password                   currentPassword, password; rotates recovery code
+
+Register/login/recover return AccountSession. A recovery code is returned only
+on registration/reset/password change. Tokens are opaque, expire and can be
+revoked. There are no store credentials, OAuth credentials or email passwords.
+
+Publisher operations (authenticated, owner-approved role)
+  PUT  uploads/{sha256}                 Raw bytes with Content-Length; verifies both
+  POST packs                           PackManifest; all files must first be owned
+
+Players and moderation
+  GET  friends                         Incoming/outgoing/accepted relationships
+  POST friends                         username; request only
+  POST friends/{userId}                Recipient accepts an incoming request
+  DELETE friends/{userId}              Remove/reject a request or friendship
+  POST/DELETE blocks/{userId}           Block/unblock; removes friendship and shared presence
+  POST reports                         packId, packVersion, reason
+
+Rooms (authenticated)
+  GET  presence                        Existing unexpired room wrapped as {room}, or null
+  GET  lobbies?q=                      Visible, unexpired advertisements only
+  POST lobbies                         HostRoomRequest
+  GET  lobbies/{id}                    Current advertisement; privacy enforced
+  GET  lobbies/{id}/heartbeat          CrewRoom snapshot, without renewing leases
+  POST lobbies/{id}/join               RoomJoinRequest; exact lock/revision/build required
+  POST lobbies/{id}/heartbeat          Joined member renews its own lease; host renews room
+  POST lobbies/{id}/ready              revision, packLock, ready
+  POST lobbies/{id}/leave              Host departure closes room; guest removes membership
+  DELETE lobbies/{id}                  Host closes room
+  POST lobbies/{id}/invite             Host rotates invitation; old code stops resolving
+  POST lobbies/{id}/kick               userId; host removes another member
+  POST invites/resolve                 code; secret is in the request body, not URL logs
+
+Visibility is public, friends or invite. Capacity is 1-4 including host. A
+player can belong to one unexpired room at a time. Friends and invitation
+access never override a block. Guest heartbeats cannot keep an absent host's
+room alive. Every room reports gameConnected=false and launcher-room-only.
+
+Owner operations require a separate X-BridgeCrew-Admin credential, absent from
+the app: POST admin/publisher, admin/hide-pack, admin/account; GET admin/reports.
+See Backend/README.txt for concrete owner commands and hosting limits.

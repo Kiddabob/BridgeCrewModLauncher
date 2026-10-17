@@ -1,19 +1,19 @@
-Version 0.2.4 explicitly registers the launcher's taskbar identity, relaunch
-icon, and small/large window icons. Existing launcher shortcuts reference a
-content-named icon file to avoid reusing a cached executable icon after updates.
+Version 0.3.0 connects the native WinUI launcher to a persistent HTTPS crew
+service. Create an account, save its recovery code, add friends, discover
+published packs, review subscriptions, host a four-person launcher room and
+share invitations. Meta PC and Steam payloads retain separate resolution and
+verification. Guests can join the launcher room and mark their pack ready.
 
-Version 0.2.3 adds a shiny gold Starfleet delta with a chrome spanner as the
-app, window, shortcut and installer icon. The transparent artwork includes
-dedicated Windows icon sizes from 16 through 256 pixels.
+The backend provides verified uploads, immutable releases, publisher identity,
+owner-approved publishing, friend acceptance, blocks, private invitations,
+capacity limits, expiring room leases, account recovery and moderation.
+Saved sign-in tokens are encrypted for the current Windows user. Existing
+sample lobbies remain available through Online -> Try sample lobbies.
 
-Native WinUI 3 launcher with Windows 11 styling, Mica, system/light/dark themes,
-sample lobby browsing, mod subscription review, separate Meta PC/Steam payloads,
-verified caching, a subscription library, and GitHub-backed app updates.
-
-Early launcher preview: sample JSON files only. Live accounts, hosted mods,
-the in-game menu and actual game joining are not connected. No game files are
-included or changed. SDK authoring tools remain a later milestone.
+Game installation and gameplay are unchanged. The game plugin, automatic
+in-game lobby advertisement/joining and mod activation are not connected.
+The SDK remains deferred until individual mod types are tested.
 
 Install the Windows x64 Setup.exe asset. The installer handles the native
-Visual C++ prerequisite if it is missing. Settings and subscriptions remain
-outside the app installation and are preserved across updates.
+Visual C++ prerequisite if missing. The updater preserves existing settings,
+subscriptions and the Starfleet/spanner icon registration.

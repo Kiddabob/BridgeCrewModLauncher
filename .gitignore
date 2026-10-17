@@ -23,3 +23,5 @@ preview.png
 *.tmp
 *.part
 .env
+Backend/private/config.php
+Backend/private/data/

@@ -14,6 +14,20 @@ public sealed class PackCache(string root)
             if (!await Verify(ContentPath(file.Sha256), file, ct)) return false;
         return true;
     }
+    public async Task<bool> IsSubscribed(PackPlan plan,CancellationToken ct=default)
+    {
+        var current=PackRules.Plan(plan.Manifest,plan.Edition,plan.Build);
+        if(current.PackLock!=plan.PackLock||!current.Files.SequenceEqual(plan.Files))return false;
+        var path=Path.Combine(root,"subscriptions",current.Manifest.Id,current.Manifest.Version,current.PackLock,current.Edition+".json");
+        if(!File.Exists(path))return false;
+        try
+        {
+            var saved=JsonSerializer.Deserialize<PackPlan>(await File.ReadAllTextAsync(path,ct),PackJson.Options);
+            return saved!=null&&saved.Manifest!=null&&saved.Files!=null&&saved.PackLock==current.PackLock&&saved.Edition==current.Edition&&saved.Build==current.Build&&
+                PackRules.Lock(saved.Manifest)==current.PackLock&&saved.Files.SequenceEqual(current.Files)&&await IsCached(current,ct);
+        }
+        catch(Exception ex)when(ex is IOException or JsonException or UnauthorizedAccessException){return false;}
+    }
     private static async Task<bool> Verify(string path, ModFile file, CancellationToken ct)
     {
         if (!File.Exists(path)) return false;
